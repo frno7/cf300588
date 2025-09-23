@@ -157,7 +157,7 @@ struct cf300588_sound_module {
 struct cf300588_sound_module cf300588_sound_init(
 	struct cf300588_sound_cycle cycle);
 
-static inline struct cf300588_sound_cycle cf300588_sound_cycle(
+static inline struct cf300588_sound_cycle cf300588_sound_cycle_cd(
 	uint64_t c, uint64_t d)
 {
 	return (struct cf300588_sound_cycle) { .c = c, .d = d };
