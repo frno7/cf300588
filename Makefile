@@ -54,6 +54,10 @@ gtags:
 	$(QUIET_GEN)gtags
 OTHER_CLEAN += GPATH GRTAGS GTAGS
 
+.PHONY: global
+global: $(CF300588_OBJ)
+	@script/global $^
+
 .PHONY: clean
 clean:
 	$(QUIET_RM)$(RM) $(ALL_OBJ) $(ALL_DEP) $(OTHER_CLEAN)
