@@ -8,7 +8,8 @@
 #include "cf300588/module/cf300588-sound.h"
 
 enum {
-	SAMPLE_RATE_CLK_DIVISOR = 8
+	SAMPLE_RATE_CLK_DIVISOR = 8,
+	DMA_BUS_MASK = 0xffffff,	/* 24-bit bus mask */
 };
 
 static inline uint32_t mode_rate_period(struct cf300588_sound_mode mode)
@@ -170,14 +171,12 @@ repeat:
 
 static size_t sound_dma_size(const struct cf300588_sound_state_dma *dma)
 {
-	return dma->end > dma->base ?
-	       dma->end - dma->base : 0;
+	return (dma->end - dma->base) & DMA_BUS_MASK;
 }
 
 static size_t sound_dma_remain(const struct cf300588_sound_state_dma *dma)
 {
-	return dma->end > dma->counter ?
-	       dma->end - dma->counter : 0;
+	return (dma->end - dma->counter) & DMA_BUS_MASK;
 }
 
 static struct cf300588_sound_dma_region sound_dma(
@@ -328,9 +327,20 @@ static bool sound_wr_ar(struct cf300588_sound_module *module,
 	uint32_t addr, uint32_t size)
 {
 	/* Note: The write address range could be made more fine-grained. */
-	return module->state.regs.ctrl.play && size > 0 &&
-	       module->state.dma.base < addr + size &&
-					addr < module->state.dma.end;
+	if (!module->state.regs.ctrl.play || !size)
+		return false;
+
+	/* The DMA base address is normally lower than the DMA end address. */
+	if (module->state.dma.base <= module->state.dma.end)
+	       return module->state.dma.base < addr + size &&
+			addr < module->state.dma.end;
+
+	/*
+	 * Unusual case where the DMA base address is
+	 * higher than the DMA end address.
+	 */
+	return module->state.dma.base < addr + size ||
+			addr < module->state.dma.end;
 }
 
 struct cf300588_sound_module cf300588_sound_init(
